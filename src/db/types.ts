@@ -9,6 +9,7 @@ export type {
   DatabaseService,
   DatabaseProvider,
   AzureSqlConfig,
+  SqliteConfig,
   DatabaseConfig,
   ScoutingBlock,
   BlockAssignment,
