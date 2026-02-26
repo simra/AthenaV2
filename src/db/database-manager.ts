@@ -1,5 +1,6 @@
 import { DatabaseService, DatabaseConfig, DatabaseProvider } from './database-service';
 import { AzureSqlDatabaseService } from './azuresql-database-service';
+import { SqliteDatabaseService } from './sqlite-database-service';
 
 class DatabaseManager {
   private static instance: DatabaseManager;
@@ -7,6 +8,17 @@ class DatabaseManager {
   private config: DatabaseConfig;
 
   private constructor() {
+    const dbProvider = process.env.DB_PROVIDER;
+
+    // Use SQLite when explicitly requested or when Azure SQL is not configured
+    if (dbProvider === 'sqlite') {
+      const filename = process.env.SQLITE_DB_PATH ?? './local.db';
+      console.log(`DatabaseManager: Using SQLite (file: ${filename})`);
+      this.config = { provider: 'sqlite', sqlite: { filename } };
+      this.currentService = new SqliteDatabaseService({ filename });
+      return;
+    }
+
     // Check if Azure SQL is properly configured
     const azureSqlConnectionString = process.env.AZURE_SQL_CONNECTION_STRING;
     const azureSqlServer = process.env.AZURE_SQL_SERVER;
@@ -50,7 +62,11 @@ class DatabaseManager {
       };
       this.currentService = new AzureSqlDatabaseService(this.config.azuresql!);
     } else {
-      throw new Error('Azure SQL database is not configured. Please set the required environment variables.');
+      // Fall back to SQLite for local development
+      const filename = process.env.SQLITE_DB_PATH ?? './local.db';
+      console.log(`DatabaseManager: Azure SQL not configured. Falling back to SQLite (file: ${filename}). Set DB_PROVIDER=sqlite or configure Azure SQL env vars.`);
+      this.config = { provider: 'sqlite', sqlite: { filename } };
+      this.currentService = new SqliteDatabaseService({ filename });
     }
   }
 
@@ -69,6 +85,9 @@ class DatabaseManager {
   private createService(config: DatabaseConfig): DatabaseService {
     if (config.provider === 'azuresql' && config.azuresql) {
       return new AzureSqlDatabaseService(config.azuresql);
+    }
+    if (config.provider === 'sqlite') {
+      return new SqliteDatabaseService(config.sqlite ?? {});
     }
     throw new Error('Invalid database configuration');
   }

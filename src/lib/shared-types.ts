@@ -276,7 +276,7 @@ export interface DatabaseService {
   syncFromCloud?(): Promise<void>;
 }
 
-export type DatabaseProvider = 'azuresql';
+export type DatabaseProvider = 'azuresql' | 'sqlite';
 
 export interface AzureSqlConfig {
   server?: string;
@@ -287,12 +287,18 @@ export interface AzureSqlConfig {
   useManagedIdentity?: boolean;
 }
 
+export interface SqliteConfig {
+  /** Path to the SQLite database file. Defaults to './local.db' */
+  filename?: string;
+}
+
 export interface DatabaseConfig {
   provider: DatabaseProvider;
   local?: {
     name: string;
   };
   azuresql?: AzureSqlConfig;
+  sqlite?: SqliteConfig;
 }
 
 // ========== GAME CONFIGURATION TYPES ==========
